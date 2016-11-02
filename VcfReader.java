@@ -274,17 +274,9 @@ public class VcfReader {
             VariantContext variant= iter.next();
             String id= variant.getContig();
             
-            System.out.println(variant.toString());
-            System.out.println(variant.isSNP());
-            System.out.println(posfirstint+"-"+(variant.getEnd()>posfirstint));
-            System.out.println(possecondint+"-"+(variant.getEnd()<possecondint));
-            System.out.println(id.equals(crom));
-            System.out.println(id);
-            System.out.println(crom);
-            
             if (variant.isSNP() &&
-                variant.getEnd()>posfirstint &&
-                variant.getEnd()<possecondint &&
+                variant.getEnd()>=posfirstint &&
+                variant.getEnd()<=possecondint &&
                 id.equals(crom)){
                 
                 vcfwriter.add(variant);
@@ -613,12 +605,8 @@ public class VcfReader {
                 MissingData();
         }
         
-        System.out.println("Option crom "+cmd.hasOption("chr"));
-        if(cmd.hasOption("chr")){
+        if (cmd.hasOption("chr")) {
            crom=cmd.getOptionValues("chr")[0];
-           System.out.println("Option crom "+cmd.getOptionValues("chr"));
-           System.out.println("Option crom "+cmd.getOptionValues("chr")[0]);
-           System.out.println("Option crom "+crom);
         }
         
         if (cmd.hasOption("interval")){

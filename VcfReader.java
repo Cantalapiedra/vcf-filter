@@ -42,6 +42,9 @@ public class VcfReader {
     public String pathout="";
 
     public VCFFileReader VCFreader;
+    
+    public static CommandLine cmd;
+    
     public Split split;
     public int DPG;
     public int DPS;
@@ -55,9 +58,6 @@ public class VcfReader {
     public int minGQ;
     public int Size;
     public Set set;
-    public static CommandLine cmd;
-    
-    public static org.apache.commons.cli.Options options;
     
     public int total;
     public double frecrar;
@@ -266,22 +266,36 @@ public class VcfReader {
     public void VariantInter(){
 
        
-       Iterator<VariantContext> iter=VCFreader.iterator();
-
-
-       while(iter.hasNext()){
+        Iterator<VariantContext> iter=VCFreader.iterator();
+        
+        System.err.println("VariantInter "+posfirstint+"-"+possecondint);
+        
+        while(iter.hasNext()){
             VariantContext variant= iter.next();
-             String id= variant.getContig();
-    
-    
-         if (variant.isSNP() && variant.getEnd()>posfirstint && variant.getEnd()<possecondint && id.equals(crom)){
-             vcfwriter.add(variant);
-             variante=variante+variant.toString()+"\n";
-
-          }
-         if(variant.getEnd()>possecondint && id.equals(crom)){
-         break;
-         }
+            String id= variant.getContig();
+            
+            System.out.println(variant.toString());
+            System.out.println(variant.isSNP());
+            System.out.println(posfirstint+"-"+(variant.getEnd()>posfirstint));
+            System.out.println(possecondint+"-"+(variant.getEnd()<possecondint));
+            System.out.println(id.equals(crom));
+            System.out.println(id);
+            System.out.println(crom);
+            
+            if (variant.isSNP() &&
+                variant.getEnd()>posfirstint &&
+                variant.getEnd()<possecondint &&
+                id.equals(crom)){
+                
+                vcfwriter.add(variant);
+                variante=variante+variant.toString()+"\n";
+                
+            }
+            
+            // ASSERT: VCF INPUT FILE IS SORTED BY CHR AND POSITION
+            if(variant.getEnd()>possecondint && id.equals(crom)){
+                break;
+            }
         }
 
     }
@@ -290,43 +304,6 @@ public class VcfReader {
         Split splits= new Split();
         splits.ifile=pathin;
         splits.init();
-    }
-    
-    public static void writeTribbleIndex(Index idx, String idxFile) throws IOException {
-        LittleEndianOutputStream stream = null;
-        try {
-            stream = new LittleEndianOutputStream(new BufferedOutputStream(new FileOutputStream(idxFile)));
-            idx.write(stream);
-        } catch (Exception e) {
-           
-        // Delete output file as its probably corrupt
-            File tmp = new File(idxFile);
-            if (tmp.exists()) {
-                tmp.delete();
-            }
-        } finally {
-            if (stream != null) {
-                stream.close();
-            }
-        }
-    }
-    
-    
-    public void createidx() {
-    
-    int binSize = 16000;
-    File inputFile = new File(pathin);
-    VCFCodec codec = new VCFCodec();
-
-    String idxFile=pathin+".idx";
-
-  
-    AbstractIndex idx= IndexFactory.createLinearIndex(inputFile, codec, binSize); 
-   
-     try{
-         writeTribbleIndex(idx,idxFile);      
-    }catch (Exception e){}
-     
     }
     
     public void BestQUALinKb(){
@@ -563,9 +540,40 @@ public class VcfReader {
    
         }         
         } while (opt!=0);
+    }
+    
+    public static void writeTribbleIndex(Index idx, String idxFile) throws IOException {
+        LittleEndianOutputStream stream = null;
+        try {
+            stream = new LittleEndianOutputStream(new BufferedOutputStream(new FileOutputStream(idxFile)));
+            idx.write(stream);
+        } catch (Exception e) {
+            
+            // Delete output file as its probably corrupt
+            File tmp = new File(idxFile);
+            if (tmp.exists()) {
+                tmp.delete();
+            }
+        } finally {
+            if (stream != null) {
+                stream.close();
+            }
+        }
+    }
     
     
-    
+    public void createidx() {
+        int binSize = 16000;
+        File inputFile = new File(pathin);
+        VCFCodec codec = new VCFCodec();
+        
+        String idxFile=pathin+".idx";
+      
+        AbstractIndex idx= IndexFactory.createLinearIndex(inputFile, codec, binSize); 
+       
+        try{
+            writeTribbleIndex(idx,idxFile);      
+        } catch (Exception e){}
     }
     
     public void ReadOptions() throws IOException {
@@ -604,8 +612,13 @@ public class VcfReader {
                 CreateVCF();
                 MissingData();
         }
-        if(cmd.hasOption("crom")){
-           crom=cmd.getOptionValues("crom")[0];
+        
+        System.out.println("Option crom "+cmd.hasOption("chr"));
+        if(cmd.hasOption("chr")){
+           crom=cmd.getOptionValues("chr")[0];
+           System.out.println("Option crom "+cmd.getOptionValues("chr"));
+           System.out.println("Option crom "+cmd.getOptionValues("chr")[0]);
+           System.out.println("Option crom "+crom);
         }
         
         if (cmd.hasOption("interval")){
@@ -678,8 +691,9 @@ public class VcfReader {
         
     }
     
-    public void CreateOptions(){
+    public static org.apache.commons.cli.Options CreateOptions(){
         
+        org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
         
         Option input = OptionBuilder.withArgName( "path to input VCF file" )                    
                                 .hasArgs(1)
@@ -711,7 +725,7 @@ public class VcfReader {
                                 .withDescription("Select interval of coordinates, requires -chr . Example: -interval 1000 2000")
                                 .create( "interval" );
         
-        Option crom = OptionBuilder.withArgName( "String" )
+        Option chr = OptionBuilder.withArgName( "String" )
                                 .hasArgs(1)
                                 .withDescription( "Select a chromosome of interest. Example: -chr Bd1" )
                                 .create( "chr" );
@@ -747,19 +761,18 @@ public class VcfReader {
                                 .hasArgs(1)
                                 .withDescription("Select top quality variant in selected window size, in Kb. Example: -nr 100" )
                                 .create( "nr" );
-
+        
+        Option menu = new Option( "menu", "Select step-by-step menu." );
+        
         //Option split = new Option( "split", "Split in two VCF files: i)SNPs and ii)Indels" );
         
-   
-        Option menu = new Option( "menu", "Select step-by-step menu." );
-
         options.addOption(DP);
         options.addOption(input);
         options.addOption(output);
         options.addOption(sDP);
         options.addOption(missing);
         options.addOption(interval);
-        options.addOption(crom);
+        options.addOption(chr);
         options.addOption(pos);
         options.addOption(sample);
         options.addOption(bi);
@@ -769,178 +782,25 @@ public class VcfReader {
         options.addOption(call);
         options.addOption(menu);
         //options.addOption(split);
-    }
-    
-    public void command() throws IOException{
-        Scanner sc= new Scanner(System.in);
-        System.out.println("This is a tool to filter/extract/subset information from a VCF file.");
-        System.out.println("In most cases it generates a new VCF file.");
-
-        System.out.println("[Options]\n");
-        System.out.println("GeneralDP : Introduce the Minimum DP in each variantcontext");
-        System.out.println("SampleDP : Introduce the Minimum DP per sample");
-        System.out.println("MissingData : Introduce the Maximun Missing data in each variantcontext");
-        System.out.println("Usage example: GeneralDP [minDP] [input=path to input VCF file] [output=path to output VCF file]");
-        System.out.println("--------------------------------------------------------------------------------------------------------");
-        System.out.println("Find : Introduce the sample in a specific chromosome in specific localitation");
-        System.out.println("Usage example: Find [namesample] [namechromosome] [position] [input=path to input VCF file]");
-        System.out.println("--------------------------------------------------------------------------------------------------------");
-        System.out.println("SelectSNPs : Select SNPs in a particular interval");
-        System.out.println("Usage example: SelectSNPs [inters=1000-2000] [namecromosome] [input=path to input VCF file] [output=path to output VCF file]");
-        System.out.println("--------------------------------------------------------------------------------------------------------");       
-        System.out.println("Biallelic: Select only the SNPs that are biallelic");
-        System.out.println("Usage example: Biallelic [input=path to input VCF file] [output=path to output VCF file]");
-        System.out.println("--------------------------------------------------------------------------------------------------------");      
-        System.out.println("MAF : Select your minimun allele frequency ");
-        System.out.println("MaxHet : Select % of accepted heterozygous samples");
-        System.out.println("Usage example: MAF [MAF] [input=path to input VCF file] [output=path to output VCF file]");
-        System.out.println("--------------------------------------------------------------------------------------------------------");      
-        //System.out.println("Split: Split your VCF file in SNPs and indels");
-        //System.out.println("Usage example: Split [input=path to input VCF file]");
-        //System.out.println("--------------------------------------------------------------------------------------------------------");      
-        System.out.println("SelectSamples: Generates new VCF file containing only samples of interest, with names separated by ; ");
-        System.out.println("Usage example: SelectSamples [samplename1;samplename2;..;] [input=path to input VCF file] [output=path to output VCF file]");
-        System.out.println("--------------------------------------------------------------------------------------------------------");
-        System.out.println("BestQuality: Generates new VCF file with the top quality variant in each set distance interval ");
-        System.out.println("Usage example: BestQuality [distance in Kb] [input=path to input VCF file] [output=path to output VCF file]");
-        System.out.println("--------------------------------------------------------------------------------------------------------");
-        
-       
-        String comands=sc.nextLine();
-        String [] option=comands.split(" ");
-        String input="";
-        String output="";
-        for (int i=0; i<option.length; i++){
-        if (option[i].contains("input")){ 
-            String prue[]=option[i].split("=");
-            input=prue[1];
-                }
-        if (option[i].contains("output")){ 
-            String prue[]=option[i].split("=");
-            output=prue[1];
-                }        
-        }
-        
-        if (input.isEmpty()==false){
-         pathin=input;
-        }
-        
-      
-        if (output.isEmpty()){
-        pathout="";
-        }
-        else {
-        pathout=output;
-        }
-
-       
-        switch (option[0]) {
-
-            case "GeneralDP":
-                DPG=Integer.parseInt(option[1]);
-                CreateVCF();
-                MinDPGen();
-            break;
-            
-            case "SampleDP":
-                DPS=Integer.parseInt(option[1]);
-                CreateVCF();
-                MinDPSample();
-            break;
-            
-            case "MissData":
-                NData=Integer.parseInt(option[1]);
-                CreateVCF();
-                MissingData();
-            break;
-            
-            case "Find":
-                sample=option[1];
-                crom=option[2];
-                position=Integer.parseInt(option[3]);
-                FindSamVar();
-                System.out.println(variante);
-            break;
-            
-            case "SelectSNPs":
-                String inter[]=option[1].split("=");
-                String inters[]=inter[1].split("-");
-
-                posfirstint=Integer.parseInt(inters[0]);
-                possecondint=Integer.parseInt(inters[1]);
-                crom=option[2];
-                CreateVCF();
-                VariantInter();
-            break;
-            
-            case "Biallelic":
-                CreateVCF();
-                NumBiallelic(); 
-            break;
-            
-            case "MAF":
-                frecrar=Double.parseDouble(option[1]);
-                CreateVCF();
-                Variantrare();
-            break;
-            
-            case "MaxHet":
-                minHet=Double.parseDouble(option[1]);
-                CreateVCF();
-                MinHet();
-            break;
-            
-            //case "Split":
-            //    Split();
-            //break;
-            
-            case "SelectSamples":
-                set= new HashSet();
-                String [] samples2=option[1].split(";");
-                System.out.println(samples2.length);
-                for (int i=0; i<samples2.length; i++){
-                    System.out.println(samples2[i]);
-                set.add(samples2[i]);
-                }
-                SelectGenotype();
-            break;
-            
-            case "BestQuality":
-                Size=Integer.parseInt(option[1]);
-                CreateVCF();
-                BestQUALinKb();
-            break;
-            
-            default:
-                System.out.println("Please type run option");
-            break;    
-                
-        }
-
-    
+        return options;
     }
     
     public static void main(String[] args) throws IOException, ParseException {
-
-     
-        options = new org.apache.commons.cli.Options();
         
-        VcfReader vcffile = new VcfReader();
+        org.apache.commons.cli.Options options = CreateOptions();
         
-        vcffile.CreateOptions();
+        CommandLineParser parser = new DefaultParser();
         
-        CommandLineParser parser = new DefaultParser(); 
-
-        cmd = parser.parse( options, args );
- 
+        cmd = parser.parse(options, args);
+        
         if(args.length<1) {
-        
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp(" ", options);
+            
             System.out.println("\nThis utility builds on HTSJDK and handles VCF versions supported there, currently v4.2.");
             System.out.println("Eduardo Candeal, with help from Carlos P Cantalapiedra and Bruno Contreras-Moreira\nEEAD-CSIC 2016");
-        }
-        else {
+        } else {
+            VcfReader vcffile = new VcfReader();
             vcffile.ReadOptions();
         }
     }

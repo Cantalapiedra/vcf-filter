@@ -563,9 +563,9 @@ public class VcfReader {
       
         AbstractIndex idx= IndexFactory.createLinearIndex(inputFile, codec, binSize); 
        
-        try{
-            writeTribbleIndex(idx,idxFile);      
-        } catch (Exception e){}
+        //try{
+        writeTribbleIndex(idx,idxFile);      
+        //} catch (Exception e){}
     }
     
     public void ReadOptions() throws IOException {

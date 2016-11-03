@@ -3,7 +3,6 @@
  *
  * @author Eduardo Candeal 2016
  */
-
 import htsjdk.tribble.index.AbstractIndex;
 import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.IndexFactory;
@@ -13,7 +12,7 @@ import htsjdk.variant.vcf.VCFFileReader;
 import java.io.File;
 import java.io.IOException;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
-import htsjdk.variant.variantcontext.writer.VariantContextWriterFactory;
+import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.VCFCodec;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
@@ -64,16 +63,27 @@ public class VcfFilter {
 
     public void CreateVCF() throws IOException {
         VCFreader = new VCFFileReader(new File(pathin));
+        VariantContextWriterBuilder builder = new VariantContextWriterBuilder();
+
         if (pathout.isEmpty()) {
-            vcfwriter = VariantContextWriterFactory.createVcf(null, System.out,
-                    VCFreader.getFileHeader().getSequenceDictionary(), DEFAULT_OPTIONS);
+            builder.setOutputFile((File)null);
+            builder.setOutputStream(System.out);
+//            vcfwriter = VariantContextWriterFactory.createVcf(null, System.out,
+//                    VCFreader.getFileHeader().getSequenceDictionary(), DEFAULT_OPTIONS);
         } else {
             FileOutputStream outputstream = new FileOutputStream(new File(pathout));
-            vcfwriter = VariantContextWriterFactory.createVcf(new File(pathout), outputstream,
-                    VCFreader.getFileHeader().getSequenceDictionary(), DEFAULT_OPTIONS);
 
+            builder.setOutputFile(new File(pathout));
+            builder.setOutputStream(outputstream);
+            
+//            vcfwriter = VariantContextWriterFactory.createVcf(new File(pathout), outputstream,
+//                    VCFreader.getFileHeader().getSequenceDictionary(), DEFAULT_OPTIONS);
         }
-
+        
+        builder.setReferenceDictionary(VCFreader.getFileHeader().getSequenceDictionary());
+        builder.setOptions(DEFAULT_OPTIONS);
+        vcfwriter = builder.build();
+        
         vcfwriter.writeHeader(VCFreader.getFileHeader());
     }
 

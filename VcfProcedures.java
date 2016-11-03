@@ -18,7 +18,7 @@ import java.util.Set;
 
 public class VcfProcedures {
 
-    public boolean MinDPGen(VCFFileReader VCFreader, int DPG, 
+    public static boolean MinDPGen(VCFFileReader VCFreader, int DPG, 
             VariantContextWriter vcfwriter, String variante) {
         
         boolean retValue = false;
@@ -40,7 +40,7 @@ public class VcfProcedures {
         return retValue;
     }
 
-    public void MinDPSample(VCFFileReader VCFreader, int DPS, 
+    public static void MinDPSample(VCFFileReader VCFreader, int DPS, 
             VariantContextWriter vcfwriter, String variante) {
 
         int total = VCFreader.getFileHeader().getNGenotypeSamples();
@@ -67,7 +67,7 @@ public class VcfProcedures {
         }
     }
 
-    public void MinHet(VCFFileReader VCFreader, int minHet, 
+    public static void MinHet(VCFFileReader VCFreader, int minHet, 
             VariantContextWriter vcfwriter, String variante) {
 
         int total = VCFreader.getFileHeader().getNGenotypeSamples();
@@ -92,7 +92,7 @@ public class VcfProcedures {
     );
         }
 
-    public void Variantrare(VCFFileReader VCFreader, double frecrar, 
+    public static void Variantrare(VCFFileReader VCFreader, double frecrar, 
             VariantContextWriter vcfwriter, String variante) {
 
         int total = VCFreader.getFileHeader().getNGenotypeSamples();
@@ -138,7 +138,7 @@ public class VcfProcedures {
 
         }
 
-    public void MissingData(VCFFileReader VCFreader, int NData,
+    public static void MissingData(VCFFileReader VCFreader, int NData,
             VariantContextWriter vcfwriter, String variante) {
 
 
@@ -163,7 +163,7 @@ public class VcfProcedures {
 
        }
 
-    public void NumBiallelic(VCFFileReader VCFreader, VariantContextWriter vcfwriter) {
+    public static void NumBiallelic(VCFFileReader VCFreader, VariantContextWriter vcfwriter) {
 
         VCFreader.iterator().forEachRemaining(variantcontext -> {
 
@@ -175,7 +175,7 @@ public class VcfProcedures {
     );
        }
 
-    public void FindSamVar(VCFFileReader VCFreader, int position, int crom,
+    public static void FindSamVar(VCFFileReader VCFreader, int position, int crom,
             String sample, String variante) {
 
         Iterator<VariantContext> iter = VCFreader.iterator();
@@ -198,7 +198,7 @@ public class VcfProcedures {
 
     }
 
-    public void SelectGenotype(VCFFileReader VCFreader, Set set, String pathout,
+    public static void SelectGenotype(VCFFileReader VCFreader, Set set, String pathout,
             VariantContextWriter vcfwriter, EnumSet<Options> DEFAULT_OPTIONS) throws IOException {
         
         VCFHeader header = new VCFHeader(VCFreader.getFileHeader().getMetaDataInInputOrder(), set);
@@ -217,8 +217,8 @@ public class VcfProcedures {
 
     }
 
-    public void VariantInter(VCFFileReader VCFreader, int posfirstint, 
-            int possecondint, int crom, VariantContextWriter vcfwriter,
+    public static void VariantInter(VCFFileReader VCFreader, int posfirstint, 
+            int possecondint, String crom, VariantContextWriter vcfwriter,
             String variante) {
 
 
@@ -248,13 +248,13 @@ public class VcfProcedures {
 
     }
 
-    public void Split(String pathin) {
+    public static void Split(String pathin) {
         Split splits = new Split();
         splits.ifile = pathin;
         splits.init();
     }
 
-    public void BestQUALinKb(VCFFileReader VCFreader, int Size,
+    public static void BestQUALinKb(VCFFileReader VCFreader, int Size,
             VariantContextWriter vcfwriter) {
 
         Iterator<VariantContext> ita = VCFreader.iterator();
@@ -301,7 +301,7 @@ public class VcfProcedures {
 
     }
 
-    public void MinGQkb(VCFFileReader VCFreader, int Size, int minGQ,
+    public static void MinGQkb(VCFFileReader VCFreader, int Size, int minGQ,
             String variante) {
 
         int total = VCFreader.getFileHeader().getNGenotypeSamples();

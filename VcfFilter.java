@@ -231,76 +231,87 @@ public class VcfFilter {
 
         org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
 
-        Option input = OptionBuilder.withArgName("path to input VCF file")
-                .hasArgs(1)
-                .withDescription("Required, must be uncompressed. Will index it.")
-                .create("input");
+        Option input = Option.builder("path to input VCF file")
+                .numberOfArgs(1)
+                .desc("Required, must be uncompressed. Will index it.")
+                .argName("input").
+                build();
 
-        Option output = OptionBuilder.withArgName("path to output VCF file")
-                .hasArgs(1)
-                .withDescription("Optional, by default prints to STDOUT.")
-                .create("output");
+        Option output = Option.builder("path to output VCF file")
+                .numberOfArgs(1)
+                .desc("Optional, by default prints to STDOUT.")
+                .argName("output")
+                .build();
 
-        Option DP = OptionBuilder.withArgName("integer")
-                .hasArgs(1)
-                .withDescription("Minimum overall DP of each variant (row) in the input.")
-                .create("DP");
+        Option DP = Option.builder("integer")
+                .numberOfArgs(1)
+                .desc("Minimum overall DP of each variant (row) in the input.")
+                .argName("DP")
+                .build();
+        
+        Option sDP = Option.builder("integer")
+                .numberOfArgs(1)
+                .desc("Minimum DP of each sample.")
+                .argName("sDP")
+                .build();
 
-        Option sDP = OptionBuilder.withArgName("integer")
-                .hasArgs(1)
-                .withDescription("Minimum DP of each sample.")
-                .create("sDP");
+        Option missing = Option.builder("double")
+                .numberOfArgs(1)
+                .desc("Allowed % of missing data in each variant. Example: -missing 5")
+                .argName("missing")
+                .build();
 
-        Option missing = OptionBuilder.withArgName("double")
-                .hasArgs(1)
-                .withDescription("Allowed % of missing data in each variant. Example: -missing 5")
-                .create("missing");
+        Option interval = Option.builder("integer")
+                .numberOfArgs(2)
+                .desc("Select interval of coordinates, requires -chr . Example: -interval 1000 2000")
+                .argName("interval")
+                .build();
 
-        Option interval = OptionBuilder.withArgName("integer")
-                .hasArgs(2)
-                .withDescription("Select interval of coordinates, requires -chr . Example: -interval 1000 2000")
-                .create("interval");
+        Option chr = Option.builder("String")
+                .numberOfArgs(1)
+                .desc("Select a chromosome of interest. Example: -chr Bd1")
+                .argName("chr")
+                .build();
 
-        Option chr = OptionBuilder.withArgName("String")
-                .hasArgs(1)
-                .withDescription("Select a chromosome of interest. Example: -chr Bd1")
-                .create("chr");
+        Option pos = Option.builder("integer")
+                .numberOfArgs(1)
+                .desc("Select a precise position. Example: -pos 1234")
+                .argName("pos")
+                .build();
 
-        Option pos = OptionBuilder.withArgName("integer")
-                .hasArgs(1)
-                .withDescription("Select a precise position. Example: -pos 1234")
-                .create("pos");
+        Option sample = Option.builder("String: sample names")
+                .desc("Select a subset of samples. Example: -sample sample1,sample2")
+                .argName("sample")
+                .build();
 
-        Option sample = OptionBuilder.withArgName("String: sample names")
-                .hasArgs()
-                .withDescription("Select a subset of samples. Example: -sample sample1,sample2")
-                .create("sample");
-
-        Option call = OptionBuilder.withArgName("String: sample name")
-                .hasArgs(1)
-                .withDescription("Requires -pos & -sample. Example: -call sample1 -chr Bd1 -pos 1000")
-                .create("call");
+        Option call = Option.builder("String: sample name")
+                .numberOfArgs(1)
+                .desc("Requires -pos & -sample. Example: -call sample1 -chr Bd1 -pos 1000")
+                .argName("call")
+                .build();
 
         Option bi = new Option("bi", "Select only biallelic genotypes.");
 
-        Option MAF = OptionBuilder.withArgName("double")
-                .hasArgs(1)
-                .withDescription("Minimum allele frequency [0-1]. Example: -MAF 0.05")
-                .create("MAF");
+        Option MAF = Option.builder("double")
+                .numberOfArgs(1)
+                .desc("Minimum allele frequency [0-1]. Example: -MAF 0.05")
+                .argName("MAF")
+                .build();
 
-        Option maxHet = OptionBuilder.withArgName("double")
-                .hasArgs(1)
-                .withDescription("Maximum % of heterozigous samples. Example: -maxHet 90")
-                .create("maxHet");
+        Option maxHet = Option.builder("double")
+                .numberOfArgs(1)
+                .desc("Maximum % of heterozigous samples. Example: -maxHet 90")
+                .argName("maxHet")
+                .build();
 
-        Option nr = OptionBuilder.withArgName("integer in Kb")
-                .hasArgs(1)
-                .withDescription("Select top quality variant in selected window size, in Kb. Example: -nr 100")
-                .create("nr");
-
-        Option menu = new Option("menu", "Select step-by-step menu.");
+        Option nr = Option.builder("integer in Kb")
+                .numberOfArgs(1)
+                .desc("Select top quality variant in selected window size, in Kb. Example: -nr 100")
+                .argName("nr")
+                .build();
 
         //Option split = new Option( "split", "Split in two VCF files: i)SNPs and ii)Indels" );
+        
         options.addOption(DP);
         options.addOption(input);
         options.addOption(output);
@@ -315,7 +326,6 @@ public class VcfFilter {
         options.addOption(maxHet);
         options.addOption(nr);
         options.addOption(call);
-        options.addOption(menu);
         //options.addOption(split);
         return options;
     }

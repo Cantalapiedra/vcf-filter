@@ -1,4 +1,3 @@
-// CPCantalapiedra 2016
 
 import java.util.Iterator;
 import htsjdk.variant.variantcontext.Allele;
@@ -8,7 +7,7 @@ import htsjdk.variant.vcf.VCFFileReader;
 import java.io.File;
 import java.io.IOException;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
-import htsjdk.variant.variantcontext.writer.VariantContextWriterFactory;
+import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.VCFHeader;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -16,11 +15,15 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Set;
 
+/**
+ *
+ * @author CPCantalapiedra 2016
+ */
 public class VcfProcedures {
 
-    public static boolean MinDPGen(VCFFileReader VCFreader, int DPG, 
+    public static boolean MinDPGen(VCFFileReader VCFreader, int DPG,
             VariantContextWriter vcfwriter, String variante) {
-        
+
         boolean retValue = false;
 
         Iterator<VariantContext> iter = VCFreader.iterator();
@@ -40,7 +43,7 @@ public class VcfProcedures {
         return retValue;
     }
 
-    public static void MinDPSample(VCFFileReader VCFreader, int DPS, 
+    public static void MinDPSample(VCFFileReader VCFreader, int DPS,
             VariantContextWriter vcfwriter, String variante) {
 
         int total = VCFreader.getFileHeader().getNGenotypeSamples();
@@ -67,7 +70,7 @@ public class VcfProcedures {
         }
     }
 
-    public static void MinHet(VCFFileReader VCFreader, int minHet, 
+    public static void MinHet(VCFFileReader VCFreader, int minHet,
             VariantContextWriter vcfwriter, String variante) {
 
         int total = VCFreader.getFileHeader().getNGenotypeSamples();
@@ -86,20 +89,17 @@ public class VcfProcedures {
             }
 
         }
-        
-    
+        );
+    }
 
-    );
-        }
-
-    public static void Variantrare(VCFFileReader VCFreader, double frecrar, 
+    public static void Variantrare(VCFFileReader VCFreader, double frecrar,
             VariantContextWriter vcfwriter, String variante) {
 
         int total = VCFreader.getFileHeader().getNGenotypeSamples();
         HashMap h = new HashMap();
 
-        VCFreader.iterator().forEachRemaining(variantcontext -> 
-        {
+        VCFreader.iterator().forEachRemaining(variantcontext
+                -> {
             double totalalleles = 0;
             h.clear();
             for (int i = 0; i < total; i++) {
@@ -111,7 +111,6 @@ public class VcfProcedures {
                     } else {
                         h.put(b, 1);
                     }
-
 
                 }
 
@@ -129,22 +128,16 @@ public class VcfProcedures {
                 vcfwriter.add(variantcontext);
             }
 
-
         }
-        
-    
+        );
 
-    );
+    }
 
-        }
-
-    public static void MissingData(VCFFileReader VCFreader, int NData,
+    public static void MissingData(VCFFileReader VCFreader, double NData,
             VariantContextWriter vcfwriter, String variante) {
-
 
         int total = VCFreader.getFileHeader().getNGenotypeSamples();
         double NData_per = total * NData / 100;
-
 
         VCFreader.iterator().forEachRemaining(variantcontext -> {
             int num = 0;
@@ -160,8 +153,7 @@ public class VcfProcedures {
             }
         });
 
-
-       }
+    }
 
     public static void NumBiallelic(VCFFileReader VCFreader, VariantContextWriter vcfwriter) {
 
@@ -172,11 +164,11 @@ public class VcfProcedures {
 
             }
         }
-    );
-       }
+        );
+    }
 
-    public static void FindSamVar(VCFFileReader VCFreader, int position, int crom,
-            String sample, String variante) {
+    public static void FindSamVar(VCFFileReader VCFreader, int position, 
+            String crom, String sample, String variante) {
 
         Iterator<VariantContext> iter = VCFreader.iterator();
         boolean find = false;
@@ -198,15 +190,26 @@ public class VcfProcedures {
 
     }
 
-    public static void SelectGenotype(VCFFileReader VCFreader, Set set, String pathout,
-            VariantContextWriter vcfwriter, EnumSet<Options> DEFAULT_OPTIONS) throws IOException {
-        
-        VCFHeader header = new VCFHeader(VCFreader.getFileHeader().getMetaDataInInputOrder(), set);
-        FileOutputStream outputstream = new FileOutputStream(new File(pathout));
-        vcfwriter = VariantContextWriterFactory.createVcf(new File(pathout),
-                outputstream, VCFreader.getFileHeader().getSequenceDictionary(), DEFAULT_OPTIONS);
+    public static void SelectGenotype(VCFFileReader VCFreader, Set set, String pathout) throws IOException {
 
-        vcfwriter.writeHeader(header);
+        VCFHeader header = new VCFHeader(VCFreader.getFileHeader().getMetaDataInInputOrder(), set);
+        
+        VariantContextWriter vcfwriter = VcfUtils.createVCF(header, pathout);
+        
+////        FileOutputStream outputstream = new FileOutputStream(new File(pathout));
+////        VariantContextWriterBuilder builder = new VariantContextWriterBuilder();
+////        
+////        builder.setOutputFile(new File(pathout));
+////        builder.setOutputStream(outputstream);
+////        
+////        builder.setReferenceDictionary(header.getSequenceDictionary());
+////        builder.setOptions(DEFAULT_OPTIONS);
+////        VariantContextWriter vcfwriter = builder.build();
+//        
+////        vcfwriter = VariantContextWriterFactory.createVcf(new File(pathout),
+////                outputstream, VCFreader.getFileHeader().getSequenceDictionary(), DEFAULT_OPTIONS);
+//
+//        vcfwriter.writeHeader(header);
 
         Iterator<VariantContext> iter = VCFreader.iterator();
         while (iter.hasNext()) {
@@ -214,13 +217,11 @@ public class VcfProcedures {
             VariantContext vc2 = variant.subContextFromSamples(set);
             vcfwriter.add(vc2);
         }
-
     }
 
-    public static void VariantInter(VCFFileReader VCFreader, int posfirstint, 
+    public static void VariantInter(VCFFileReader VCFreader, int posfirstint,
             int possecondint, String crom, VariantContextWriter vcfwriter,
             String variante) {
-
 
         Iterator<VariantContext> iter = VCFreader.iterator();
 
@@ -340,7 +341,6 @@ public class VcfProcedures {
             }
         }
         variante = "" + array.size();
-
 
     }
 }

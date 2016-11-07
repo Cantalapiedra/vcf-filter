@@ -2,17 +2,13 @@
 import java.util.Iterator;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.variantcontext.writer.Options;
 import htsjdk.variant.vcf.VCFFileReader;
-import java.io.File;
 import java.io.IOException;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
-import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.VCFHeader;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -20,7 +16,86 @@ import java.util.Set;
  * @author CPCantalapiedra 2016
  */
 public class VcfProcedures {
+    
+    // Returns true if the variant chromosome coincides with the specified one
+    public static boolean variantChr(VariantContext variant, String chr) {
+        
+        boolean retValue = false;
+        
+        // Removed: (variant.isSNP() && variant.getContig().equals(chr))
+        if (variant.getContig().equals(chr)) retValue = true;
+        
+        return retValue;
+    }
+    
+    // Returns true if the variant position is the specified one
+    public static boolean variantPos(VariantContext variant, int pos) {
+        
+        boolean retValue = false;
+        
+        if (pos >= variant.getStart() &&
+                pos <= variant.getEnd()) retValue = true;
+        
+        return retValue;
+    }
+    
+    // Returns true if the variant position (or positions in the case of indels)
+    // are overlapping with the specified interval (start and end arguments)
+    public static boolean variantRange(VariantContext variant, 
+            int start, int end) {
+        
+        boolean retValue = false;
+        
+        if ((variant.getStart() >= start && variant.getStart() <= end) ||
+            (variant.getEnd() >= start && variant.getEnd() <= end) ||
+            (variant.getStart() < start && variant.getEnd() > end))
+            retValue = true;
+        
+        return retValue;
+    }
+    
+    // Returns true if the general DP of the variant is greater or equal than
+    // the specified one
+    public static boolean minVariantDP(VariantContext variant, int variantDP) {
 
+        boolean retValue = false;
+        
+        int currentDP = variant.getAttributeAsInt("DP", 0);
+        if (currentDP >= variantDP) retValue = true;
+
+        return retValue;
+    }
+    
+    // Returns true if percentage of missing samples of current variant
+    // is greater than the maximum specified
+    public static boolean missingData(VariantContext variant, double missPercen,
+            int totalSamples) {
+
+        boolean retValue = true;
+        
+        double maxMissSamples = totalSamples * missPercen / 100;
+        
+        int genotypeDP = -1;
+        int numMissSamples = 0;
+        // Check for each sample the DP on this variant
+        for (int i = 0; i < totalSamples; i++) {
+            
+            genotypeDP = variant.getGenotype(i).getDP();
+            
+            // If DP is non-positive, it counts as missing data
+            if (genotypeDP <= 0) numMissSamples++;
+            
+            // If the number of missing samples is greater than the max
+            // allowed, the variant is skipped (filtered out)
+            if (numMissSamples > maxMissSamples){
+                retValue = false;
+                break;
+            }
+        }
+        
+        return retValue;
+    }
+    
     public static boolean MinDPGen(VCFFileReader VCFreader, int DPG,
             VariantContextWriter vcfwriter, String variante) {
 
@@ -133,27 +208,7 @@ public class VcfProcedures {
 
     }
 
-    public static void MissingData(VCFFileReader VCFreader, double NData,
-            VariantContextWriter vcfwriter, String variante) {
-
-        int total = VCFreader.getFileHeader().getNGenotypeSamples();
-        double NData_per = total * NData / 100;
-
-        VCFreader.iterator().forEachRemaining(variantcontext -> {
-            int num = 0;
-            for (int i = 0; i < total; i++) {
-
-                int DP2 = variantcontext.getGenotype(i).getDP();
-                if (DP2 == 0) {
-                    num = num + 1;
-                }
-            }
-            if (num < NData_per) {
-                vcfwriter.add(variantcontext);
-            }
-        });
-
-    }
+    
 
     public static void NumBiallelic(VCFFileReader VCFreader, VariantContextWriter vcfwriter) {
 
@@ -217,6 +272,30 @@ public class VcfProcedures {
             VariantContext vc2 = variant.subContextFromSamples(set);
             vcfwriter.add(vc2);
         }
+    }
+    
+    
+    
+    public static void VariantChr(VCFFileReader VCFreader, String chr, 
+            List<VariantContext> variants,
+            String variante) {
+        
+        System.err.println("Processing chr "+chr);
+        
+        Iterator<VariantContext> iter = VCFreader.iterator();
+
+        VariantContext variant;
+        String id;
+        while (iter.hasNext()) {
+            variant = iter.next();
+            id = variant.getContig();
+
+            if (variant.isSNP() && id.equals(chr)) {
+                variants.add(variant);
+                variante = variante + variant.toString() + "\n";
+            }
+        }
+
     }
 
     public static void VariantInter(VCFFileReader VCFreader, int posfirstint,

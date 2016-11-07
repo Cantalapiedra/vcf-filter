@@ -13,77 +13,156 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.MissingOptionException;
 
 public class VcfFilter {
 
-    private static boolean debuggin = false;
+    private static final boolean debuggin = true;
     
+    /**
+     * 
+     * Method which sets up the Options available
+     * from the command line
+     * 
+     */
     public static Options CreateOptions() {
 
         Options options = new Options();
         
-        Option input = Option.builder("input")
+        // Input file
+        Option input = Option.builder("i")
+                .longOpt("input")
+                .desc("VCF/BCF type input file.")
+                .argName("FILE PATH")
+                .hasArg(true)
                 .numberOfArgs(1)
-                .desc("Required, must be uncompressed. Will index it.")
-                .argName("path to input VCF file").
-                build();
+                .type(String.class)
+                .required(true)
+                .build();
         options.addOption(input);
-
-        Option output = Option.builder("output")
+        
+        // Input file type
+        Option inputType = Option.builder("b")
+                .longOpt("bcf")
+                .desc("Input file format is BCF (default input file format is VCF).")
+                .hasArg(false)
+                .build();
+        options.addOption(inputType);
+        
+        // Output file
+        Option output = Option.builder("o")
+                .longOpt("output")
+                .desc("Output file (stdout if absent).")
+                .argName("FILE PATH")
                 .numberOfArgs(1)
-                .desc("Optional, by default prints to STDOUT.")
-                .argName("path to output VCF file")
+                .type(String.class)
                 .build();
         options.addOption(output);
-
-        Option DP = Option.builder("DP")
-                .numberOfArgs(1)
-                .desc("Minimum overall DP of each variant (row) in the input.")
-                .argName("integer")
-                .build();
-        options.addOption(DP);
-
-        Option sDP = Option.builder("sDP")
-                .numberOfArgs(1)
-                .desc("Minimum DP of each sample.")
-                .argName("integer")
-                .build();
-        options.addOption(sDP);
-
-        Option missing = Option.builder("missing")
-                .numberOfArgs(1)
-                .desc("Allowed % of missing data in each variant. Example: -missing 5")
-                .argName("double")
-                .build();
-        options.addOption(missing);
-
-        Option interval = Option.builder("interval")
-                .numberOfArgs(2)
-                .desc("Select interval of coordinates, requires -chr . Example: -interval 1000 2000")
-                .argName("integer")
-                .build();
-        options.addOption(interval);
-
+        
+        // Subsetting (filtering by position) options
+        //
+        // Chromosome
         Option chr = Option.builder("chr")
+                .longOpt("chromosome")
+                .desc("Chromosome to be output. Example: -chr Bd1.")
+                .hasArg(true)
                 .numberOfArgs(1)
-                .desc("Select a chromosome of interest. Example: -chr Bd1")
-                .argName("String")
+                .type(Number.class)
+                .argName("Chr name")
                 .build();
         options.addOption(chr);
-
+        
+        // Single position to be output
         Option pos = Option.builder("pos")
+                .longOpt("position")
+                .desc("Select a precise position. Requires -chr. Example: -pos 1234")
+                .hasArg(true)
                 .numberOfArgs(1)
-                .desc("Select a precise position. Example: -pos 1234")
-                .argName("integer")
+                .type(Number.class)
+                .argName("int")
                 .build();
         options.addOption(pos);
-
-        Option sample = Option.builder("sample")
+        
+        // Interval of positions, or range.
+        Option interval = Option.builder("r")
+                .longOpt("range")
+                .desc("Interval of positions to be output. Requires -chr. Example: -interval 1000 2000")
+                .hasArg(true)
+                .numberOfArgs(2)
+                .type(Number.class)
+                .argName("int int")
+                .build();
+        options.addOption(interval);
+        
+        // General depth of variant
+        Option DP = Option.builder("dp")
+                .longOpt("depth")
+                .desc("Minimum overall DP of each variant (row) in the input.")
+                .hasArg(true)
+                .numberOfArgs(1)
+                .type(Number.class)
+                .argName("int")
+                .build();
+        options.addOption(DP);
+        
+        // Select specific samples to be output, discarding the others
+        //
+        // By sample name
+        Option sample = Option.builder("s")
+                .longOpt("samples")
                 .desc("Select a subset of samples. Example: -sample sample1,sample2")
-                .argName("String: sample names")
+                .hasArgs()
+                .numberOfArgs(Option.UNLIMITED_VALUES)
+                .valueSeparator(',')
+                .type(String.class)
+                .argName("sample1,sample2,...,sampleN")
                 .build();
         options.addOption(sample);
-
+        
+        // Missing samples
+        Option missing = Option.builder("m")
+                .longOpt("missing")
+                .desc("Allowed % of missing data in each variant. Example: -missing 5")
+                .hasArg(true)
+                .numberOfArgs(1)
+                .type(Number.class)
+                .argName("int")
+                .build();
+        options.addOption(missing);
+        
+        // Minimum allele frequency
+        Option MAF = Option.builder("MAF")
+                .longOpt("min_allele_freq")
+                .desc("Minimum allele frequency [0-1]. Example: -MAF 0.05")
+                .hasArg(true)
+                .numberOfArgs(1)
+                .type(Number.class)
+                .argName("decimal")
+                .build();
+        options.addOption(MAF);
+        
+        // Max heterozygots
+        Option maxHet = Option.builder("h")
+                .longOpt("max_het")
+                .desc("Maximum % of heterozigous samples. Example: -maxHet 90")
+                .hasArg(true)
+                .numberOfArgs(1)
+                .type(Number.class)
+                .argName("decimal")
+                .build();
+        options.addOption(maxHet);
+        
+        // Minimum depth of each sample
+        Option sDP = Option.builder("sdp")
+                .longOpt("sample_depth")
+                .desc("Minimum DP of each sample.")
+                .hasArg(true)
+                .numberOfArgs(1)
+                .type(Number.class)
+                .argName("int")
+                .build();
+        options.addOption(sDP);
+        
         Option call = Option.builder("call")
                 .numberOfArgs(1)
                 .desc("Requires -pos & -sample. Example: -call sample1 -chr Bd1 -pos 1000")
@@ -94,20 +173,6 @@ public class VcfFilter {
         Option bi = new Option("bi", "Select only biallelic genotypes.");
         options.addOption(bi);        
         
-        Option MAF = Option.builder("MAF")
-                .numberOfArgs(1)
-                .desc("Minimum allele frequency [0-1]. Example: -MAF 0.05")
-                .argName("double")
-                .build();
-        options.addOption(MAF);
-
-        Option maxHet = Option.builder("maxHet")
-                .numberOfArgs(1)
-                .desc("Maximum % of heterozigous samples. Example: -maxHet 90")
-                .argName("double")
-                .build();
-        options.addOption(maxHet);
-
         Option nr = Option.builder("nr")
                 .numberOfArgs(1)
                 .desc("Select top quality variant in selected window size, in Kb. Example: -nr 100")
@@ -132,16 +197,22 @@ public class VcfFilter {
                 HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp(" ", options);
 
-                System.out.println("\nThis utility builds on HTSJDK and handles VCF versions supported there, currently v4.2.");
-                System.out.println("Eduardo Candeal, with help from Carlos P Cantalapiedra and Bruno Contreras-Moreira\nEEAD-CSIC 2016");
+                System.out.println("\nThis utility builds on HTSJDK and handles "
+                        + "VCF versions supported there, currently v4.2.");
+                System.out.println("Eduardo Candeal, with help from "
+                        + "Carlos P Cantalapiedra and Bruno Contreras-Moreira\nEEAD-CSIC 2016");
             } else {
-                VcfController vcfctrl = new VcfController();
-                vcfctrl.ReadOptions(cmd);
+                VcfController vcfctrl = new VcfController(cmd);
+                vcfctrl.run();
             }
         
         } catch (ParseException pe) {
             System.out.println("Error when parsing program arguments:");
             System.out.println(pe.getMessage());
+            System.out.println();
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp(" ", options);
+            
             if (debuggin) throw pe;
             
         } catch (IOException ie) {

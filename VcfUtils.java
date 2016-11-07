@@ -10,6 +10,7 @@ import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFHeader;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.OutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.EnumSet;
@@ -31,30 +32,27 @@ public class VcfUtils {
                     Options.ALLOW_MISSING_FIELDS_IN_HEADER,
                     Options.WRITE_FULL_FORMAT_FIELD);
     
+    public static EnumSet<Options> STREAM_OPTIONS
+            = EnumSet.of(Options.ALLOW_MISSING_FIELDS_IN_HEADER,
+                    Options.WRITE_FULL_FORMAT_FIELD);
+    
     public static VariantContextWriter createVCF(VCFHeader header, String pathout) throws IOException {
-
-        VariantContextWriterBuilder builder = new VariantContextWriterBuilder();
-
-        if (pathout.isEmpty()) {
-            builder.setOutputFile((File) null);
-            builder.setOutputStream(System.out);
-//            vcfwriter = VariantContextWriterFactory.createVcf(null, System.out,
-//                    VCFreader.getFileHeader().getSequenceDictionary(), DEFAULT_OPTIONS);
-        } else {
-            FileOutputStream outputstream = new FileOutputStream(new File(pathout));
-
-            builder.setOutputFile(new File(pathout));
-            builder.setOutputStream(outputstream);
-
-//            vcfwriter = VariantContextWriterFactory.createVcf(new File(pathout), outputstream,
-//                    VCFreader.getFileHeader().getSequenceDictionary(), DEFAULT_OPTIONS);
+        
+        File outfile = null;
+        OutputStream outputstream = System.out;
+        
+        if (!pathout.isEmpty()) {
+            outfile = new File(pathout);
+            outputstream = new FileOutputStream(outfile);
         }
+        
+        VariantContextWriterBuilder builder = new VariantContextWriterBuilder();
+        builder.setOutputFile(outfile);
+        builder.setOutputStream(outputstream);
 
         builder.setReferenceDictionary(header.getSequenceDictionary());
-        builder.setOptions(DEFAULT_OPTIONS);
+        builder.setOptions(STREAM_OPTIONS);
         VariantContextWriter vcfwriter = builder.build();
-
-        vcfwriter.writeHeader(header);
 
         return vcfwriter;
     }
